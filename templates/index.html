@@ -2,60 +2,64 @@
 <html>
   <head>
     <title>Editor de Texto em Tempo Real</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  </head>
+  <head>
   <body>
     <textarea id="editor" rows="10" cols="50"></textarea>
     <div class="cursor" id="cursor-box"></div>
-
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
     <script type="text/javascript">
-      var socket = io.connect("http://localhost:5000");
-      var cursorBox = $("#cursor-box");
-
+      var socket = io.connect("http://ip_adress_aqui:5000");
+      var cursorBox = document.getElementById("cursor-box");
+      var editor = document.getElementById("editor");
+      var lastTimestamp = 0;
+      
       socket.on("connect", function () {
         console.log("Conectado com sucesso!");
         socket.emit("get_text");
       });
-
+      
       socket.on("text_update", function (data) {
-        document.getElementById("editor").value = data.text;
+        // Verifica se o timestamp recebido é mais recente
+        if (data.timestamp > lastTimestamp) {
+          document.getElementById("editor").value = data.text;
+          lastTimestamp = data.timestamp;
+        }
       });
-
-      $("#editor").on("input", function () {
-        var text = $(this).val();
-        socket.emit("text_update", { text: text });
+      
+      editor.addEventListener("input", function () {
+        var text = editor.value;
+        // Gera um timestamp para a atualização
+        var timestamp = Date.now();
+        socket.emit("text_update", { text: text, timestamp: timestamp });
       });
-
-      $(document).on("mousemove", function (event) {
-        var editor = $("#editor");
-        var editorPosition = editor.offset();
+      
+      
+      document.addEventListener("mousemove", function (event) {
+        var editorPosition = editor.getBoundingClientRect();
         var cursorPosition = {
           x: event.pageX - editorPosition.left,
           y: event.pageY - editorPosition.top,
         };
         socket.emit("cursor_position", cursorPosition);
       });
-
+      
+      
       socket.on("all_cursor_positions", function (cursorPositions) {
-        cursorBox.hide();
+        cursorBox.style.display = "none";
         for (var socketId in cursorPositions) {
-          if (cursorPositions.hasOwnProperty(socketId)) {
+          if (socketId !== socket.id) {
             var cursorPosition = cursorPositions[socketId];
-            showCursorPosition(socketId, cursorPosition);
+            showCursorPosition(cursorPosition);
           }
         }
       });
 
-      function showCursorPosition(socketId, cursorPosition) {
-        if (socketId !== socket.id) {
-          // Identificação visual do cursor de outros usuários
-          cursorBox.css({
-            left: cursorPosition.x + "px",
-            top: cursorPosition.y + "px",
-          });
-          cursorBox.show();
-        }
+      // Identificação visual do cursor de outros usuários
+      function showCursorPosition(cursorPosition) {
+        cursorBox.style.left = cursorPosition.x + "px";
+        cursorBox.style.top = cursorPosition.y + "px";
+        cursorBox.style.display = "block";
       }
     </script>
 
