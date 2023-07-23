@@ -4,7 +4,8 @@
     <title>Editor de Texto em Tempo Real</title>
   <head>
   <body>
-    <textarea id="editor" rows="10" cols="50"></textarea>
+    <h2>Editor de Texto</h2>
+    <textarea id="editor" rows="10" cols="50" disabled></textarea>
     <div class="cursor" id="cursor-box"></div>
     
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
@@ -17,8 +18,14 @@
       socket.on("connect", function () {
         console.log("Conectado com sucesso!");
         socket.emit("get_text");
+        editor.disabled = false; // Habilita a edição
       });
       
+      socket.on("disconnect", function () {
+        console.log("Conexão perdida!");
+        editor.disabled = true; // Desabilita a edição
+      });
+
       socket.on("text_update", function (data) {
         // Verifica se o timestamp recebido é mais recente
         if (data.timestamp > lastTimestamp) {

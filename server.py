@@ -23,17 +23,13 @@ def index():
 @socketio.on("connect")
 def handle_connect():
     emit("connected", {"data": "Conectado com sucesso!"})
-    emit(
-        "text_update", {"text": text}
-    )  # Envia o texto atual para o cliente recém-conectado
-    emit(
-        "all_cursor_positions", cursor_positions
-    )  # Envia as posições de cursor atuais para o cliente recém-conectado
+    emit("text_update", {"text": text})
+    emit("all_cursor_positions", cursor_positions)
 
 
 @socketio.on("text_update")
 def handle_text_update(data):
-    global text
+    global text, text_timestamp
     received_text = data["text"]
     received_timestamp = data["timestamp"]
 
